@@ -8,7 +8,8 @@ bot = telebot.TeleBot(BOT_TOKEN)
 
 process_states = {}
 
-#TODO: connect to a gnosis multisig wallet
+
+# TODO: connect to a gnosis multisig wallet
 @bot.message_handler(commands=["start", "hello"])
 def send_welcome(message):
     bot.reply_to(message, "Howdy, how are you doing?")
@@ -34,7 +35,7 @@ def confirm_yes(message):
                 chat_id,
                 "All members have responded with /yes. Proceeding with the process.",
             )
-            #TODO: execute signature
+            # TODO: execute signature
         else:
             remaining = (
                 chat_members - 1 - len(process_states[chat_id]["members_responded"])
@@ -44,6 +45,7 @@ def confirm_yes(message):
             )
     else:
         bot.reply_to(message, "No active process. Please start with /startprocess.")
+
 
 @bot.message_handler(commands=["no"])
 def confirm_no(message):
