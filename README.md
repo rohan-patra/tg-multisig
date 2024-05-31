@@ -1,8 +1,11 @@
+
 # PolkaSafe - Easy, Intuitive Multisigs within Your Telegram Group Chats
 
 This repository contains a Telegram bot that allows users to create and manage multisignature wallets on a Polkadot parachain. The bot is built using Python and leverages the `substrateinterface` library to interact with the parachain.
 
 ![Demo](https://github.com/rohan-patra/tg-multisig/assets/51090093/539db9b7-ddab-462d-b4d0-a09f6dfa732c)
+
+[View our pitch deck here](https://www.canva.com/design/DAGGzqvcGUs/vqJJfYtyrFgEl7v148fMhQ/view)
 
 ## Prerequisites
 
