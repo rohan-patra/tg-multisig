@@ -1,10 +1,7 @@
-import io
 import os
 from dotenv import load_dotenv
 import telebot
-from pydantic import BaseModel
 from substrateinterface import SubstrateInterface, Keypair
-from substrateinterface.utils.ss58 import ss58_decode, ss58_encode
 from hashlib import blake2b
 
 # Load environment variables

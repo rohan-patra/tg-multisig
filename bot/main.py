@@ -1,7 +1,6 @@
 import os
 from dotenv import load_dotenv
 import telebot
-import requests
 
 load_dotenv()
 BOT_TOKEN = os.getenv("TELEGRAM_API_KEY")
@@ -10,7 +9,7 @@ bot = telebot.TeleBot(BOT_TOKEN)
 process_states = {}
 
 
-# TODO: connect to a gnosis multisig wallet
+# connect to a gnosis multisig wallet
 @bot.message_handler(commands=["start", "hello"])
 def send_welcome(message):
     bot.reply_to(message, "Howdy, how are you doing?")
@@ -36,7 +35,7 @@ def confirm_yes(message):
                 chat_id,
                 "All members have responded with /yes. Proceeding with the process.",
             )
-            # TODO: execute signature
+            # execute signature
         else:
             remaining = (
                 chat_members - 1 - len(process_states[chat_id]["members_responded"])
