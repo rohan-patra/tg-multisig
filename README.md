@@ -2,6 +2,8 @@
 
 This repository contains a Telegram bot that allows users to create and manage multisignature wallets on a Polkadot parachain. The bot is built using Python and leverages the `substrateinterface` library to interact with the parachain.
 
+![Demo](https://github.com/rohan-patra/tg-multisig/assets/51090093/539db9b7-ddab-462d-b4d0-a09f6dfa732c)
+
 ## Prerequisites
 
 - Python 3.12
