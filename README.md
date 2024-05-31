@@ -59,7 +59,7 @@ The bot will now be active and ready to receive commands from users in Telegram.
 - `/yes`: Approves a pending transaction.
 - `/no`: Rejects a pending transaction.
 - `/balance`: Checks the balance of the multisig wallet.
-- `/privatekey`: Retrieves the user's private key (sent via direct message).
+- `/privatekey`: Retrieves the user's private key (Proof of Concept).
 - `/switch_chain <rpc_url> <preset>`: Switches to a different parachain.
 
 ## Repo Structure

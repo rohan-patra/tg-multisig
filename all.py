@@ -394,3 +394,4 @@ def echo_all(message):
 
 if __name__ == "__main__":
     bot.infinity_polling()
+    print("Bot is running...\nYou can now interact with it on Telegram")
