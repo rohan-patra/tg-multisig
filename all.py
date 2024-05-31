@@ -12,10 +12,12 @@ load_dotenv()
 BOT_TOKEN = os.getenv("TELEGRAM_API_KEY")
 bot = telebot.TeleBot(BOT_TOKEN)
 
-# Connect to Westend testnet
+# Connect to the default parachain
+DEFAULT_RPC_URL = "wss://westend-rpc.polkadot.io"
 substrate = SubstrateInterface(
-    url="wss://westend-rpc.polkadot.io", ss58_format=42, type_registry_preset="westend"
+    url=DEFAULT_RPC_URL, ss58_format=42, type_registry_preset="westend"
 )
+
 
 # In-memory storage for group and wallet info
 groups = {}
@@ -185,7 +187,8 @@ def send_welcome(message):
             "/yes - Approve a pending transaction\n"
             "/no - Reject a pending transaction\n"
             "/balance - Check the multisig wallet balance\n"
-            "/privatekey - Retrieve your private key (sent via DM)",
+            "/privatekey - Retrieve your private key (sent via DM)\n"
+            "/switch_chain <rpc_url> <preset> - Switch to a different parachain",
         )
 
 
@@ -336,6 +339,31 @@ def get_balance_handler(message):
 
     response = get_multisig_balance(chat_id)
     bot.reply_to(message, response)
+
+
+@bot.message_handler(commands=["switch_chain"])
+def switch_chain(message):
+    if len(message.text.split()) < 3:
+        bot.reply_to(
+            message,
+            "Please provide the RPC URL and preset of the parachain you want to switch to.",
+        )
+        return
+
+    rpc_url = message.text.split()[1]
+    preset = message.text.split()[2]
+    try:
+        global substrate
+        print(rpc_url, preset)
+        substrate = SubstrateInterface(
+            url=rpc_url, ss58_format=42, type_registry_preset=preset
+        )
+        bot.reply_to(
+            message,
+            f"Switched to the parachain with RPC: {rpc_url} and preset: {preset}",
+        )
+    except Exception as e:
+        bot.reply_to(message, f"Error switching to the parachain: {str(e)}")
 
 
 @bot.message_handler(commands=["privatekey"])
