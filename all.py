@@ -164,7 +164,7 @@ def get_multisig_balance(group_id: str):
         "flags": int(data["flags"].value),
     }
 
-    return {"balance": balance_data}
+    return {"balance": balance_data, "address": multisig_address}
 
 
 # Telegram bot handlers
@@ -183,7 +183,7 @@ def send_welcome(message):
             "/create <destination> <amount> - Create a new transaction\n"
             "/yes - Approve a pending transaction\n"
             "/no - Reject a pending transaction\n"
-            "/balance - Check the multisig wallet balance\n"
+            "/balance - Check the multisig wallet balance and address\n"
             "/privatekey - Retrieve your private key (sent via DM)\n"
             "/switch_chain <rpc_url> <preset> - Switch to a different parachain",
         )
@@ -287,7 +287,7 @@ def confirm_yes(message):
             process_state["members"] = set()
             bot.send_message(
                 chat_id,
-                f"Threshold has been reach and the transaction has been confirmed. 🎉🎉🎉\nTransaction Data: {groups[chat_id]['pending_tx']}",
+                f"Threshold has been reached and the transaction has been confirmed. 🎉🎉🎉\nTransaction Data: {groups[chat_id]['pending_tx']}",
             )
             try:
                 confirm_data = confirm_tx(chat_id)

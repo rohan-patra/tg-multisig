@@ -72,7 +72,7 @@ The bot will now be active and ready to receive commands from users in Telegram.
 - `/create <destination> <amount>`: Creates a new transaction proposal.
 - `/yes`: Approves a pending transaction.
 - `/no`: Rejects a pending transaction.
-- `/balance`: Checks the balance of the multisig wallet.
+- `/balance`: Checks the balance of the multisig wallet and its address.
 - `/privatekey`: Retrieves the user's private key (sent via direct message).
 - `/switch_chain <rpc_url> <preset>`: Switches to a different parachain.
 
