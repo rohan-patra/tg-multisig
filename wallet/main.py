@@ -1,7 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from substrateinterface import SubstrateInterface, Keypair
-from substrateinterface.utils.ss58 import ss58_encode
+import hashlib
+from scalecodec import ScaleBytes
 
 app = FastAPI()
 
@@ -127,22 +128,26 @@ async def confirm_tx(group_id: str):
     if signers < group["threshold"]:
         raise HTTPException(status_code=400, detail="Not enough signatures")
 
-    multisig_address = group["multisig_address"]
-    other_signers = [
+    other_signatories = [
         wallet.ss58_address
         for user, wallet in group["wallets"].items()
-        if user != group["pending_tx"]["signers"][0]
+        if user in group["pending_tx"]["signers"][1:]
     ]
 
-    call_hash = substrate.get_call_hash(group["pending_tx"]["call"])
+    call = group["pending_tx"]["call"]
+
     multi_sig_call = substrate.compose_call(
         call_module="Multisig",
         call_function="as_multi",
         call_params={
             "threshold": group["threshold"],
-            "other_signatories": other_signers,
+            "other_signatories": other_signatories,
             "maybe_timepoint": None,
-            "call": call_hash,
+            "call": {
+                "call_module": call.call_module,
+                "call_function": call.call_function,
+                "call_args": {"dest": call.call_args[0], "value": call.call_args[1]},
+            },
             "store_call": True,
             "max_weight": 1000000000,
         },
