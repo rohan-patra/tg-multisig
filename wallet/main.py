@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from substrateinterface import SubstrateInterface, Keypair
-import hashlib
-from scalecodec import ScaleBytes
+from substrateinterface.utils.ss58 import ss58_decode, ss58_encode
+from hashlib import blake2b
 
 app = FastAPI()
 
@@ -136,20 +136,28 @@ async def confirm_tx(group_id: str):
 
     call = group["pending_tx"]["call"]
 
+    # Compose the call hash
+    call_data = substrate.compose_call(
+        call_module=call.call_module,
+        call_function=call.call_function,
+        call_params=call.call_args
+    ).data
+
+    call_hash = blake2b(call_data, digest_size=32).digest()
+
     multi_sig_call = substrate.compose_call(
         call_module="Multisig",
-        call_function="as_multi",
+        call_function="approve_as_multi",
         call_params={
             "threshold": group["threshold"],
             "other_signatories": other_signatories,
             "maybe_timepoint": None,
-            "call": {
-                "call_module": call.call_module,
-                "call_function": call.call_function,
-                "call_args": {"dest": call.call_args[0], "value": call.call_args[1]},
-            },
+            "call_hash": call_hash,
             "store_call": True,
-            "max_weight": 1000000000,
+            "max_weight": {
+                "proof_size": 0,
+                "ref_time": 1000000000,
+            },
         },
     )
 

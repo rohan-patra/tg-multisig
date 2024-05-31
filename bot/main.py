@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 import telebot
+import requests
 
 load_dotenv()
 BOT_TOKEN = os.getenv("TELEGRAM_API_KEY")
