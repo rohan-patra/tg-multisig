@@ -20,6 +20,7 @@ substrate = SubstrateInterface(
 # In-memory storage for group and wallet info
 groups = {}
 
+
 def init_group(group_id: str, usernames: list[str], threshold: int):
     if group_id in groups:
         return {"error": "Group already exists"}
@@ -51,6 +52,7 @@ def init_group(group_id: str, usernames: list[str], threshold: int):
         "multisig_address": multisig_address,
     }
 
+
 def create_tx(group_id: str, proposer: str, destination: str, amount: int):
     group = groups.get(group_id)
     if not group:
@@ -68,6 +70,7 @@ def create_tx(group_id: str, proposer: str, destination: str, amount: int):
     group["pending_tx"] = {"call": call, "signers": [proposer]}
 
     return {"message": "Created transaction"}
+
 
 def sign_tx(group_id: str, username: str):
     group = groups.get(group_id)
@@ -90,6 +93,7 @@ def sign_tx(group_id: str, username: str):
     group["pending_tx"]["signers"].append(username)
 
     return {"message": "Signed transaction"}
+
 
 def confirm_tx(group_id: str):
     group = groups.get(group_id)
@@ -114,7 +118,7 @@ def confirm_tx(group_id: str):
     call_data = substrate.compose_call(
         call_module=call.call_module,
         call_function=call.call_function,
-        call_params=call.call_args
+        call_params=call.call_args,
     ).data
 
     call_hash = blake2b(call_data, digest_size=32).digest()
@@ -143,6 +147,7 @@ def confirm_tx(group_id: str):
 
     return {"message": "Confirmed transaction", "receipt": receipt}
 
+
 def get_multisig_balance(group_id: str):
     group = groups.get(group_id)
     if not group:
@@ -162,20 +167,28 @@ def get_multisig_balance(group_id: str):
 
     return {"balance": balance_data}
 
+
 # Telegram bot handlers
-process_state = {
-    "active": False,
-    "members": set()
-}
+process_state = {"active": False, "members": set()}
 user_ids = []
-bot_state = { 
-    "group_initialized": False
-}
+bot_state = {"group_initialized": False}
+
 
 @bot.message_handler(commands=["start", "hello"])
 def send_welcome(message):
-    bot.reply_to(message, "Howdy, how are you doing?")
-    
+    if message.chat.type == "group":
+        bot.send_message(
+            message.chat.id,
+            "Welcome to the MultiSig Wallet Bot! Here's how to use me:\n\n"
+            "/hi - Register yourself with the bot\n"
+            "/create <destination> <amount> - Create a new transaction\n"
+            "/yes - Approve a pending transaction\n"
+            "/no - Reject a pending transaction\n"
+            "/balance - Check the multisig wallet balance\n"
+            "/privatekey - Retrieve your private key (sent via DM)",
+        )
+
+
 @bot.message_handler(commands=["hi"])
 def register_user(message):
     chat_id = message.chat.id
@@ -186,16 +199,22 @@ def register_user(message):
         return
     user_ids.append(user_id)
     bot.send_message(chat_id, f"Hello, @{username}! You are now registerd.")
-    
+
     # Get chat members count
     chat_member_count = bot.get_chat_member_count(chat_id) - 1
     if len(user_ids) == chat_member_count:
         response = init_group(chat_id, user_ids, chat_member_count)
         print(user_ids)
-        bot_state['group_initialized'] = True
-        bot.send_message(chat_id, "Group initialized! You may begin creating transactions.")
+        bot_state["group_initialized"] = True
+        bot.send_message(
+            chat_id, "Group initialized! You may begin creating transactions."
+        )
     else:
-        bot.send_message(chat_id, f"Waiting for {chat_member_count - len(user_ids)} more members to register.")
+        bot.send_message(
+            chat_id,
+            f"Waiting for {chat_member_count - len(user_ids)} more members to register.",
+        )
+
 
 @bot.message_handler(commands=["create"])
 def create_tx_handler(message):
@@ -205,67 +224,85 @@ def create_tx_handler(message):
     if len(text) < 2:
         bot.reply_to(message, "Usage: /create_tx <destination> <amount>")
         return
-    
-    if not bot_state['group_initialized'] :
-        bot.reply_to(message, "Group not initialized. Please register all members first.")
+
+    if not bot_state["group_initialized"]:
+        bot.reply_to(
+            message, "Group not initialized. Please register all members first."
+        )
         return
-    
-    if process_state['active']:
-        bot.reply_to(message, "There is an active process. Please wait for it to finish.")
+
+    if process_state["active"]:
+        bot.reply_to(
+            message, "There is an active process. Please wait for it to finish."
+        )
         return
 
     destination = text[1]
     amount = int(text[2])
-    
+
     print(user_id)
 
-    process_state['active'] = True
-    process_state['members'] = set([user_id])
+    process_state["active"] = True
+    process_state["members"] = set([user_id])
     response = create_tx(chat_id, user_id, destination, amount)
     print(response)
-    bot.reply_to(message, "Transaction created. Waiting for all members to sign with /yes or /no.")
+    bot.reply_to(
+        message,
+        "Transaction created. Waiting for all members to sign with /yes or /no.",
+    )
+
 
 @bot.message_handler(commands=["yes"])
 def confirm_yes(message):
     chat_id = message.chat.id
     user_id = str(message.from_user.id)
-    
-    if not bot_state['group_initialized'] :
-        bot.reply_to(message, "Group not initialized. Please register all members first.")
+
+    if not bot_state["group_initialized"]:
+        bot.reply_to(
+            message, "Group not initialized. Please register all members first."
+        )
         return
-    
+
     if process_state["active"]:
         if user_id in process_state["members"]:
             bot.reply_to(message, "You have already responded.")
             return
-        
+
         process_state["members"].add(user_id)
         chat_members = bot.get_chat_members_count(chat_id)
         signed_data = sign_tx(chat_id, user_id)
-        
+
         print(signed_data)
-        
+
         if len(process_state["members"]) >= chat_members - 1:
             process_state["active"] = False
             process_state["members"] = set()
-            bot.send_message(chat_id, f"Threshold has been reach and the transaction has been confirmed. 🎉🎉🎉\nTransaction Data: {groups[chat_id]['pending_tx']}")
+            bot.send_message(
+                chat_id,
+                f"Threshold has been reach and the transaction has been confirmed. 🎉🎉🎉\nTransaction Data: {groups[chat_id]['pending_tx']}",
+            )
             try:
                 confirm_data = confirm_tx(chat_id)
             except:
                 pass
         else:
             remaining = chat_members - 1 - len(process_state["members"])
-            bot.send_message(chat_id, f"Waiting for {remaining} more members to respond.")
+            bot.send_message(
+                chat_id, f"Waiting for {remaining} more members to respond."
+            )
     else:
         bot.reply_to(message, "No active process. Please start with /create.")
+
 
 @bot.message_handler(commands=["no"])
 def confirm_no(message):
     chat_id = message.chat.id
     user_id = str(message.from_user.id)
-    
-    if not bot_state['group_initialized'] :
-        bot.reply_to(message, "Group not initialized. Please register all members first.")
+
+    if not bot_state["group_initialized"]:
+        bot.reply_to(
+            message, "Group not initialized. Please register all members first."
+        )
         return
 
     if process_state["active"]:
@@ -278,20 +315,49 @@ def confirm_no(message):
     else:
         bot.reply_to(message, "No active process. Please start with /startprocess.")
 
+
 @bot.message_handler(commands=["balance"])
 def get_balance_handler(message):
     chat_id = message.chat.id
-    
-    if not bot_state['group_initialized'] :
-        bot.reply_to(message, "Group not initialized. Please register all members first.")
+
+    if not bot_state["group_initialized"]:
+        bot.reply_to(
+            message, "Group not initialized. Please register all members first."
+        )
         return
 
     response = get_multisig_balance(chat_id)
     bot.reply_to(message, response)
-    
+
+
 @bot.message_handler(func=lambda msg: True)
 def echo_all(message):
     bot.reply_to(message, message.text)
+
+
+@bot.message_handler(commands=["privatekey"])
+def get_private_key(message):
+    chat_id = message.chat.id
+    user_id = str(message.from_user.id)
+
+    if not bot_state["group_initialized"]:
+        bot.reply_to(
+            message, "Group not initialized. Please register all members first."
+        )
+        return
+
+    wallet = groups[chat_id]["wallets"].get(user_id)
+    if not wallet:
+        bot.reply_to(message, "You are not registered in this group.")
+        return
+
+    private_key = wallet.mnemonic
+    bot.send_message(
+        message.from_user.id,
+        f"Your private key is: {private_key}\n\n"
+        "Please keep it safe and do not share it with anyone!",
+    )
+
 
 if __name__ == "__main__":
     bot.infinity_polling()
