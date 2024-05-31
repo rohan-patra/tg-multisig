@@ -194,11 +194,19 @@ def register_user(message):
     chat_id = message.chat.id
     user_id = str(message.from_user.id)
     username = message.from_user.username
+
+    if bot_state["group_initialized"]:
+        bot.send_message(
+            chat_id, "The group is already initialized. No new registrations allowed."
+        )
+        return
+
     if username in user_ids:
         bot.send_message(chat_id, f"@{username} is already registered.")
         return
+
     user_ids.append(user_id)
-    bot.send_message(chat_id, f"Hello, @{username}! You are now registerd.")
+    bot.send_message(chat_id, f"Hello, @{username}! You are now registered.")
 
     # Get chat members count
     chat_member_count = bot.get_chat_member_count(chat_id) - 1
@@ -330,21 +338,16 @@ def get_balance_handler(message):
     bot.reply_to(message, response)
 
 
-@bot.message_handler(func=lambda msg: True)
-def echo_all(message):
-    bot.reply_to(message, message.text)
-
-
 @bot.message_handler(commands=["privatekey"])
 def get_private_key(message):
-    chat_id = message.chat.id
-    user_id = str(message.from_user.id)
-
     if not bot_state["group_initialized"]:
         bot.reply_to(
             message, "Group not initialized. Please register all members first."
         )
         return
+
+    chat_id = message.chat.id
+    user_id = str(message.from_user.id)
 
     wallet = groups[chat_id]["wallets"].get(user_id)
     if not wallet:
@@ -352,11 +355,16 @@ def get_private_key(message):
         return
 
     private_key = wallet.mnemonic
-    bot.send_message(
-        message.from_user.id,
-        f"Your private key is: {private_key}\n\n"
-        "Please keep it safe and do not share it with anyone!",
+    bot.reply_to(
+        message,
+        f"Your private key is: ||{private_key}||\n\nPlease keep it safe and do not share it with anyone\!",
+        parse_mode="MarkdownV2",
     )
+
+
+@bot.message_handler(func=lambda msg: True)
+def echo_all(message):
+    bot.reply_to(message, message.text)
 
 
 if __name__ == "__main__":
