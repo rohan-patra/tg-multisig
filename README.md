@@ -67,17 +67,11 @@ The bot will now be active and ready to receive commands from users in Telegram.
 ```
 .
 ├── README.md
-├── all.py →
+├── all.py → the main Python script containing the Telegram bot code.
 ├── bot
-│   └── main.py
+│   └── main.py → bot-related helpers
 ├── requirments.txt
-└── wallet
-    ├── blank
+└── wallet → wallet-related scripts
     ├── main.py
     └── new_wallet.py
 ```
-
-- `all.py`: The main Python script containing the Telegram bot code.
-- `bot/main.py`: Additional bot-related code (if any).
-- `requirements.txt`: List of required Python packages.
-- `wallet/`: Directory containing wallet-related scripts.
